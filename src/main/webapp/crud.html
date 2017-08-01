@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" href="/EasyUICRUD/css/themes/icon.css">
+<link rel="stylesheet" href="/EasyUICRUD/css/themes/default/easyui.css">
+<script type="text/javascript" src="/EasyUICRUD/js/jquery.min.js"></script>
+<script type="text/javascript" src="/EasyUICRUD/js/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="/EasyUICRUD/js/easyui-lang-zh_CN.js"></script>
+
+<script>
+	$(function() {
+		$("#openTabOneBtn").linkbutton({
+			iconCls : "icon-help",
+			onClick : function() {
+				$("#tt").tabs("select", 0);
+			}
+		});
+		$("#openTabTwoBtn").linkbutton(
+				{
+					iconCls : "icon-tip",
+					onClick : function() {
+						$("#tt").tabs("select", 1).tabs("getSelected").panel(
+								"refresh", "/EasyUICRUD/remote")
+					}
+				});
+		$("#openTabThreeBtn").linkbutton(
+				{
+					iconCls : "icon-redo",
+					onClick : function() {
+						$("#tt").tabs("select", 2).tabs("getSelected").panel(
+								"refresh", "/EasyUICRUD/remote")
+						// 			$("#tt").tabs("select",2);
+					}
+				});
+		$("#tt").tabs(
+				{
+					onSelect : function(title, index) {
+						if (index == 1 || index == 2) {
+							$("#tt").tabs("getSelected").panel("refresh",
+									"/EasyUICRUD/remote")
+						}
+					}
+				});
+		//第一选项卡数据表格
+		$('#dg').datagrid({
+			url : '/EasyUICRUD/empsByPage',
+			// 	    只允许单选
+			singleSelect : true,
+			// 	    显示分页条
+			pagination : true,
+			//数据表格每列对应的json字段名field以及显示的列名title
+			columns : [ [ {
+				field : 'empId',
+				title : '员工id',
+				width : 100
+			}, {
+				field : 'empName',
+				title : '员工姓名',
+				width : 100
+			}, {
+				field : 'salary',
+				title : '员工薪资',
+				width : 100,
+				align : 'right'
+			} ] ],
+			toolbar : [ {
+				iconCls : 'icon-add',
+				text : "添加员工",
+				handler : function() {
+					//修改窗口标题
+					$("#formWin").window({
+						title:"添加员工"
+					});
+					//打开窗口
+					$("#formWin").window("open");
+					//修改提交地址
+					$("#empForm").form({url:"/EasyUICRUD/saveEmp"})
+				}
+			}, '-', {
+				iconCls : 'icon-edit',
+				text : "修改员工",
+				handler : function() {
+					$("#formWin").window({
+						title:"修改员工"
+					});
+					//先判断是否选中
+					var selected = $("#dg").datagrid("getSelected");
+					console.log(selected);
+					//没选中提示
+					if(selected==null){
+						$.messager.alert('提示消息','请先选择一条记录！','error');
+					//选中打开窗口，回显数据
+					}else{
+						$("#empForm").form("load",selected).form({url:"/EasyUICRUD/updateEmp"});
+						$("#formWin").window("open");
+					}
+				}
+			}, '-', {
+				iconCls : 'icon-no',
+				text : "删除员工",
+				handler : function() {
+					//先判断是否选中
+					var selected = $("#dg").datagrid("getSelected");
+					console.log(selected);
+					//没选中提示
+					if(selected==null){
+						$.messager.alert('提示消息','请先选择一条记录！','error');
+					//选中打开窗口，回显数据
+					}else{
+						$.messager.confirm('删除员工', '确认删除员工[ '+selected.empName+' ]？', function(flag){
+							if (flag){
+							    // 退出操作;
+							    $.post("/EasyUICRUD/deleteEmp","empId="+selected.empId,function(data){
+							    	$("#dg").datagrid("reload");
+							    });
+							}else{
+								$.messager.show({
+									title:'提示消息',
+									msg:'用户取消操作',
+									timeout:3000,
+									showType:'slide'
+								});
+							}
+						});
+					}
+				}
+			} ]
+
+		});
+		//提交按钮提交表单,关闭窗口，清空表单
+		$("#submitbtn").linkbutton({
+			onClick:function(){
+				$("#empForm").form("submit");
+				$("#formWin").window("close");
+				$("#empForm").form("clear");
+			}
+		});
+		//表单提交成功后关闭窗口，重新刷新数据表格
+		$("#empForm").form({
+			success:function(){
+				$("#dg").datagrid("reload");
+			}
+		});
+		//窗口关闭清空表单
+		$("#formWin").window({
+			onClose:function(){
+				$("#empForm").form("clear");
+			}
+		});
+		//取消按钮关闭窗口
+		$("#cancelbtn").linkbutton({
+			onClick:function(){
+				$("#formWin").window("close");
+				$.messager.show({
+					title:'提示消息',
+					msg:'用户取消操作',
+					timeout:3000,
+					showType:'slide'
+				});
+			}
+		});
+	});
+</script>
+</head>
+<body class="easyui-layout">
+	<div data-options="region:'north',title:'North Title',split:true"
+		style="height: 100px; background-image: url('/EasyUICRUD/img/114.jpg');"></div>
+	<div data-options="region:'south',title:'South Title',split:true"
+		style="height: 100px; text-align: center">&copy;atguigu</div>
+	<div data-options="region:'west',title:'West',split:true"
+		style="width: 150px;">
+		<div id="aa" class="easyui-accordion" data-options="fit:true"
+			style="width: 300px; height: 200px;">
+			<div title="Title1" data-options="iconCls:'icon-save'"
+				style="overflow: auto; padding: 0px;">
+				<a id="openTabOneBtn" class="easyui-linkbutton" style="width: 100%">打开一号选项卡</a>
+				<a id="openTabTwoBtn" class="easyui-linkbutton" style="width: 100%">打开二号选项卡</a>
+				<a id="openTabThreeBtn" class="easyui-linkbutton"
+					style="width: 100%">打开三号选项卡</a>
+			</div>
+			<div title="Title2" data-options="iconCls:'icon-reload'"
+				style="padding: 10px;"></div>
+			<div title="Title3"></div>
+		</div>
+
+	</div>
+	<div data-options="region:'center',title:'center title'"
+		style="padding: 5px; background: #eee;">
+		<div id="tt" class="easyui-tabs" data-options="fit:true"
+			style="width: 500px; height: 250px;">
+			<div title="Tab1" style="padding: 20px;">
+				<!-- 				一号选项卡是数据表格 -->
+				<table id="dg"></table>
+			</div>
+			<div title="Tab2" data-options="loadingMessage:'正在加载'"
+				style="overflow: auto; padding: 20px;">二号选项卡</div>
+			<div title="Tab3" data-options="loadingMessage:'正在加载'"
+				style="padding: 20px;">三号选项卡</div>
+		</div>
+	</div>
+	<div id="formWin" class="easyui-window" title="My Window"
+		style="width: 350px; height: 250px; padding-top: 50px; text-align: center"
+		data-options="iconCls:'icon-save',modal:true,closed:true">
+		<form id="empForm" method="post">
+			员工编号:<input name="empId" readonly="readonly"><br/>
+			员工姓名:<input name="empName"><br/>
+			员工薪资:<input name="salary"><br/><br/> 
+		</form>
+		<a id="submitbtn" class="easyui-linkbutton" data-options="iconCls:'icon-ok'">确认</a>
+		<a id="cancelbtn" class="easyui-linkbutton" data-options="iconCls:'icon-cancel'">取消</a>
+	</div>
+</body>
+</html>
